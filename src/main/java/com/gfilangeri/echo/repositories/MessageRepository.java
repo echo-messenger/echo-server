@@ -8,5 +8,4 @@ import java.util.List;
 
 @Repository
 public interface MessageRepository extends CrudRepository<Message, String> {
-    List<Message> findAllByConversationIdEquals(String conversationId);
 }

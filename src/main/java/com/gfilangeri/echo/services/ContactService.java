@@ -40,16 +40,12 @@ public class ContactService {
                 if (!id1.equals(id)) {
                     userService
                             .getUser(id1)
-                            .ifPresent(user -> {
-                                response.add(user);
-                            });
+                            .ifPresent(response::add);
                 }
                 if (!id2.equals(id)) {
                     userService
                             .getUser(id2)
-                            .ifPresent(user -> {
-                                response.add(user);
-                            });
+                            .ifPresent(response::add);
                 }
             }
         }

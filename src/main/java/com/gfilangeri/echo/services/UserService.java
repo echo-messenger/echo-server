@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Log4j2
 @Service
@@ -30,8 +32,12 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-    public Optional<User> getUserByEmail(String email) {
-        return userRepository.findUserByEmailEquals(email);
+    public User getUserByEmail(String email) {
+        return StreamSupport
+                .stream(userRepository.findAll().spliterator(), false)
+                .filter(user -> email.equals(user.getEmail()))
+                .findAny()
+                .orElse(null);
     }
 
     public Optional<User> updateUser(UserRequest newUser, String id) {
@@ -65,12 +71,10 @@ public class UserService {
         return user;
     }
 
-    public Optional<User> signIn(SignInRequest request) {
-        Optional<User> found = userRepository.findUserByEmailEquals(request.getEmail());
-        if (found.isPresent()) {
-            if (checkPassword(request.getPlainPassword(), found.get().getHashedPassword())) {
-                return found;
-            }
+    public User signIn(SignInRequest request) {
+        User found = getUserByEmail(request.getEmail());
+        if (checkPassword(request.getPlainPassword(), found.getHashedPassword())) {
+            return found;
         }
         return null;
     }

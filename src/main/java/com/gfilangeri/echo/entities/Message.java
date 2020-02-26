@@ -13,7 +13,7 @@ import org.springframework.data.cassandra.core.mapping.Table;
 public class Message {
     @PrimaryKey
     private @NonNull String id;
-    @Indexed
+    // TODO   @Indexed
     private @NonNull String conversationId;
     private @NonNull String senderId;
     private @NonNull String messageContent;

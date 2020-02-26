@@ -37,7 +37,7 @@ public class UserController {
     }
 
     @GetMapping("/userE/{email}")
-    public Optional<User> getUserByEmail(@PathVariable String email) {
+    public User getUserByEmail(@PathVariable String email) {
         return userService.getUserByEmail(email);
     }
 
@@ -57,7 +57,7 @@ public class UserController {
     }
 
     @PostMapping("/signin")
-    public Optional<User> signIn(@RequestBody SignInRequest request) {
+    public User signIn(@RequestBody SignInRequest request) {
         return userService.signIn(request);
     }
 }

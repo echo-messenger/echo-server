@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Service
 public class MessageService {
@@ -29,7 +31,10 @@ public class MessageService {
 
     public List<MessageResponse> getMessagesInConversation(String conversationId)
     {
-        List<Message> messages = messageRepository.findAllByConversationIdEquals(conversationId);
+        List<Message> messages = StreamSupport
+                .stream(messageRepository.findAll().spliterator(), false)
+                .filter(x -> x.getConversationId().equals(conversationId))
+                .collect(Collectors.toList());
         List<MessageResponse> messageResponses = new ArrayList<>();
         for (Message message : messages) {
             Optional<User> user = userService.getUser(message.getSenderId());

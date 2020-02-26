@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Log4j2
 @Service
@@ -50,7 +52,10 @@ public class ConversationService {
             List<String> userIds = new ArrayList<>();
             List<String> userNames = new ArrayList<>();
             Conversation convo = res.get();
-            List<Inbox> inboxes = inboxRepository.findAllByConversationIdEquals(convo.getId());
+            List<Inbox> inboxes = StreamSupport
+                    .stream(inboxRepository.findAll().spliterator(), false)
+                    .filter(x -> x.getConversationId().equals(convo.getId()))
+                    .collect(Collectors.toList());
             for (Inbox inbox : inboxes) {
                 Optional<User> user = userRepository.findById(inbox.getUserId());
                 userIds.add(inbox.getUserId());

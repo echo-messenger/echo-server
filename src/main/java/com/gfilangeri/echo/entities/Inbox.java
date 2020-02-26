@@ -8,14 +8,15 @@ import org.springframework.data.cassandra.core.mapping.Table;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter @Setter
+@Getter
+@Setter
 @ToString
 @Table("inboxes")
 public class Inbox {
     @PrimaryKey
     private @NonNull String id;
-    @Indexed
+    // TODO   @Indexed
     private @NonNull String userId;
-    @Indexed
+    // TODO   @Indexed
     private @NonNull String conversationId;
 }

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Log4j2
 @Service
@@ -35,11 +36,15 @@ public class InboxService {
     }
 
     public List<ConversationResponse> getInboxesForUser(String userId) {
-        List<Inbox> userInboxes = inboxRepository.findAllByUserId(userId);
+        List<Inbox> userInboxes = StreamSupport
+                .stream(inboxRepository.findAll().spliterator(), false)
+                .filter(x -> x.getUserId().equals(userId))
+                .collect(Collectors.toList());
         List<ConversationResponse> responses = new ArrayList<>();
         for (Inbox inbox : userInboxes) {
-            List<String> users = inboxRepository.findAllByConversationIdEquals(inbox.getConversationId())
-                    .stream()
+            List<String> users = StreamSupport
+                    .stream(inboxRepository.findAll().spliterator(), false)
+                    .filter(x -> x.getConversationId().equals(inbox.getConversationId()))
                     .map(Inbox::getUserId)
                     .collect(Collectors.toList());
             conversationRepository
