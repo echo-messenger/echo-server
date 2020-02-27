@@ -38,6 +38,7 @@ public class UserController {
 
     @GetMapping("/userE/{email}")
     public User getUserByEmail(@PathVariable String email) {
+        System.out.println("retrieving user with email address: " + email);
         return userService.getUserByEmail(email);
     }
 
@@ -58,6 +59,7 @@ public class UserController {
 
     @PostMapping("/signin")
     public User signIn(@RequestBody SignInRequest request) {
+        System.out.println(request);
         return userService.signIn(request);
     }
 }

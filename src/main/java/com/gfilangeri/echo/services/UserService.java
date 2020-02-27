@@ -47,7 +47,8 @@ public class UserService {
             user.setFirstName(newUser.getFirstName());
             user.setLastName(newUser.getLastName());
             user.setEmail(newUser.getEmail());
-            user.setHashedPassword(hashPassword(newUser.getPlainPassword()));
+            user.setHashedPassword(newUser.getHashedPassword());
+            user.setProfilePicture(newUser.getProfilePicture());
             userRepository.save(user);
         }
         return optionalUser;
@@ -67,6 +68,7 @@ public class UserService {
         user.setLastName(newUser.getLastName());
         user.setEmail(newUser.getEmail());
         user.setHashedPassword(hashPassword(newUser.getPlainPassword()));
+        user.setProfilePicture(newUser.getProfilePicture());
         userRepository.save(user);
         return user;
     }

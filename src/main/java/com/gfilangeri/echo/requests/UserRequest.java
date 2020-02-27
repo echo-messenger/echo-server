@@ -12,5 +12,6 @@ public class UserRequest {
     private @NonNull String lastName;
     private @NonNull String email;
     private @NonNull String plainPassword;
+    private String hashedPassword;
     private String profilePicture;
 }
