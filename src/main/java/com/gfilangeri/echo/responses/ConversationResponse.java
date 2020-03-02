@@ -16,4 +16,8 @@ public class ConversationResponse {
     private List<String> userIds;
     private List<String> userNames;
     private String conversationId;
+    private boolean group;
+    private String lastMessage;
+    private String lastSender;
+    private Long timestamp;
 }

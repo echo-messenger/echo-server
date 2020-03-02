@@ -1,10 +1,13 @@
 package com.gfilangeri.echo.services;
 
 import com.gfilangeri.echo.entities.Inbox;
+import com.gfilangeri.echo.entities.User;
 import com.gfilangeri.echo.repositories.ConversationRepository;
 import com.gfilangeri.echo.repositories.InboxRepository;
+import com.gfilangeri.echo.repositories.UserRepository;
 import com.gfilangeri.echo.responses.ConversationResponse;
 import com.gfilangeri.echo.requests.ExistingConversationRequest;
+import com.gfilangeri.echo.responses.MessageResponse;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,11 +23,16 @@ import java.util.stream.StreamSupport;
 public class InboxService {
     private InboxRepository inboxRepository;
     private ConversationRepository conversationRepository;
+    private UserRepository userRepository;
+    private MessageService messageService;
+
 
     @Autowired
-    public InboxService(InboxRepository inboxRepository, ConversationRepository conversationRepository) {
+    public InboxService(InboxRepository inboxRepository, ConversationRepository conversationRepository, UserRepository userRepository, MessageService messageService) {
         this.inboxRepository = inboxRepository;
         this.conversationRepository = conversationRepository;
+        this.userRepository = userRepository;
+        this.messageService = messageService;
     }
 
     public Iterable<Inbox> getInboxes() {
@@ -51,9 +59,38 @@ public class InboxService {
                     .findById(inbox.getConversationId())
                     .ifPresent(conversation -> {
                         ConversationResponse response = new ConversationResponse();
-                        response.setName(conversation.getName());
+                        List<MessageResponse> messages = messageService.getMessagesInConversation(conversation.getId());
+                        Collections.sort(messages);
+                        MessageResponse message = new MessageResponse();
+                        if (!messages.isEmpty())
+                            message = messages.get(messages.size() - 1);
+                        if (users.size() <= 2) {
+                            response.setGroup(false);
+                            users.remove(userId);
+                            Optional<User> user = userRepository.findById(users.get(0));
+                            if (user.isPresent()) {
+                                response.setName(user.get().getFirstName() + " " + user.get().getLastName());
+                            }
+                        } else {
+                            response.setGroup(true);
+                            response.setName(conversation.getName());
+                            response.setUserIds(users);
+                        }
                         response.setUserIds(users);
                         response.setConversationId(conversation.getId());
+                        if (messages.isEmpty()) {
+                            response.setLastMessage("");
+                            response.setTimestamp(Long.parseLong("0"));
+                            response.setLastSender("");
+                        } else {
+                            response.setLastMessage(message.getMessageContent());
+                            response.setTimestamp(message.getTimestamp());
+                            if (message.getSenderId().equals(userId)) {
+                                response.setLastSender("You");
+                            } else {
+                                response.setLastSender(message.getSenderName());
+                            }
+                        }
                         responses.add(response);
                     });
         }

@@ -9,16 +9,14 @@ import com.gfilangeri.echo.repositories.InboxRepository;
 import com.gfilangeri.echo.repositories.MessageRepository;
 import com.gfilangeri.echo.repositories.UserRepository;
 import com.gfilangeri.echo.responses.ConversationResponse;
+import com.gfilangeri.echo.responses.MessageResponse;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -29,16 +27,19 @@ public class ConversationService {
     private MessageRepository messageRepository;
     private InboxRepository inboxRepository;
     private UserRepository userRepository;
+    private MessageService messageService;
 
     @Autowired
     public ConversationService(ConversationRepository conversationRepository,
                                MessageRepository messageRepository,
                                InboxRepository inboxRepository,
-                               UserRepository userRepository) {
+                               UserRepository userRepository,
+                               MessageService messageService) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.inboxRepository = inboxRepository;
         this.userRepository = userRepository;
+        this.messageService = messageService;
     }
 
     public Iterable<Conversation> getConversations() {
@@ -47,6 +48,9 @@ public class ConversationService {
 
     public ConversationResponse getConversation(String id) {
         Optional<Conversation> res = conversationRepository.findById(id);
+        List<MessageResponse> messages = messageService.getMessagesInConversation(id);
+        Collections.sort(messages);
+        MessageResponse message = messages.get(messages.size() - 1);
         if (res.isPresent()) {
             ConversationResponse response = new ConversationResponse();
             List<String> userIds = new ArrayList<>();
@@ -63,10 +67,14 @@ public class ConversationService {
                     userNames.add(user.get().getFirstName() + " " + user.get().getLastName());
                 }
             }
+            if (userNames.size() > 2) response.setGroup(true);
+            else response.setGroup(false);
             response.setConversationId(convo.getId());
             response.setName(convo.getName());
             response.setUserIds(userIds);
             response.setUserNames(userNames);
+            response.setLastMessage(message.getMessageContent());
+            response.setTimestamp(message.getTimestamp());
             return response;
         }
         return null;

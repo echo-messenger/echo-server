@@ -99,6 +99,7 @@ public class MessageService {
             res.setSenderId(message.getSenderId());
             res.setSenderName(name);
             res.setMessageContent(message.getMessageContent());
+            res.setTimestamp(message.getTimestamp());
         }
         return res;
     }

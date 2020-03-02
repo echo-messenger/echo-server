@@ -49,6 +49,7 @@ public class ContactService {
                 }
             }
         }
+        Collections.sort(response);
         return response;
     }
 
@@ -63,6 +64,14 @@ public class ContactService {
     }
 
     public ResponseEntity<Contact> addContact(Contact newContact) {
+        List<User> allContacts = getAllContactsForUser(newContact.getUser1Id());
+        for (User user : allContacts) {
+            if (user.getId().equals(newContact.getUser2Id())) {
+                System.out.println("Contact pair already exists");
+                return null;
+            }
+        }
+
         String id = String.valueOf(new Random().nextInt());
         Contact contact = new Contact();
         boolean res1 = userRepository.existsById(newContact.getUser1Id());
