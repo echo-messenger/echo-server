@@ -7,12 +7,8 @@ import com.gfilangeri.echo.responses.MessageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 @Service
 public class MessageService {
@@ -25,16 +21,14 @@ public class MessageService {
         this.userService = userService;
     }
 
-    public Iterable<Message> getMessages() {
+    public List<Message> getMessages() {
         return messageRepository.findAll();
     }
 
-    public List<MessageResponse> getMessagesInConversation(String conversationId)
-    {
-        List<Message> messages = StreamSupport
-                .stream(messageRepository.findAll().spliterator(), false)
-                .filter(x -> x.getConversationId().equals(conversationId))
-                .collect(Collectors.toList());
+    public List<MessageResponse> getMessagesInConversation(String conversationId) {
+        List<Message> messages = messageRepository.findAll();
+        messages.removeIf(x -> !x.getConversationId().equals(conversationId));
+
         List<MessageResponse> messageResponses = new ArrayList<>();
         for (Message message : messages) {
             Optional<User> user = userService.getUser(message.getSenderId());
@@ -53,13 +47,40 @@ public class MessageService {
         return messageResponses;
     }
 
-    public Optional<Message> getMessage(String id)
-    {
+    public MessageResponse getLastMessageInConversation(String conversationId, List<Message> messagesIn) {
+        List<Message> messages = messagesIn.stream().map(x -> x).collect(Collectors.toList());
+        MessageResponse response = new MessageResponse();
+        messages.removeIf(x -> !x.getConversationId().equals(conversationId));
+        Collections.sort(messages);
+        if (messages.isEmpty()) {
+            response.setMessageContent("");
+            response.setTimestamp(Long.parseLong("0"));
+            response.setSenderName("");
+            response.setSenderId("1");
+            return response;
+        }
+        Message lastMessage = messages.get(messages.size() - 1);
+        Optional<User> user = userService.getUser(lastMessage.getSenderId());
+        if (user.isPresent()) {
+            String name = user.get().getFirstName() + " " + user.get().getLastName();
+            response.setSenderName(name);
+            response.setSenderId(lastMessage.getSenderId());
+            response.setMessageContent(lastMessage.getMessageContent());
+            response.setTimestamp(lastMessage.getTimestamp());
+
+            return response;
+        }
+
+        return null;
+    }
+
+
+
+    public Optional<Message> getMessage(String id) {
         return messageRepository.findById(id);
     }
 
-    public Optional<Message> updateMessage(Message newMessage, String id)
-    {
+    public Optional<Message> updateMessage(Message newMessage, String id) {
         Optional<Message> optionalMessage = messageRepository.findById(id);
         if (optionalMessage.isPresent()) {
             Message message = optionalMessage.get();
@@ -76,11 +97,10 @@ public class MessageService {
     public String deleteMessage(String id) {
         boolean result = messageRepository.existsById(id);
         messageRepository.deleteById(id);
-        return "{ \"success\" : "+ (result ? "true" : "false") +" }";
+        return "{ \"success\" : " + (result ? "true" : "false") + " }";
     }
 
-    public MessageResponse addMessage(Message newMessage)
-    {
+    public MessageResponse addMessage(Message newMessage) {
         String id = String.valueOf(new Random().nextInt());
         Message message = new Message();
         MessageResponse res = new MessageResponse();

@@ -1,9 +1,12 @@
 package com.gfilangeri.echo.services;
 
+import com.gfilangeri.echo.entities.Conversation;
 import com.gfilangeri.echo.entities.Inbox;
+import com.gfilangeri.echo.entities.Message;
 import com.gfilangeri.echo.entities.User;
 import com.gfilangeri.echo.repositories.ConversationRepository;
 import com.gfilangeri.echo.repositories.InboxRepository;
+import com.gfilangeri.echo.repositories.MessageRepository;
 import com.gfilangeri.echo.repositories.UserRepository;
 import com.gfilangeri.echo.responses.ConversationResponse;
 import com.gfilangeri.echo.requests.ExistingConversationRequest;
@@ -16,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 @Log4j2
 @Service
@@ -25,14 +27,18 @@ public class InboxService {
     private ConversationRepository conversationRepository;
     private UserRepository userRepository;
     private MessageService messageService;
+    private MessageRepository messageRepository;
 
 
     @Autowired
-    public InboxService(InboxRepository inboxRepository, ConversationRepository conversationRepository, UserRepository userRepository, MessageService messageService) {
+    public InboxService(InboxRepository inboxRepository, ConversationRepository conversationRepository,
+                        UserRepository userRepository, MessageService messageService,
+                        MessageRepository messageRepository) {
         this.inboxRepository = inboxRepository;
         this.conversationRepository = conversationRepository;
         this.userRepository = userRepository;
         this.messageService = messageService;
+        this.messageRepository = messageRepository;
     }
 
     public Iterable<Inbox> getInboxes() {
@@ -44,57 +50,44 @@ public class InboxService {
     }
 
     public List<ConversationResponse> getInboxesForUser(String userId) {
-        List<Inbox> userInboxes = StreamSupport
-                .stream(inboxRepository.findAll().spliterator(), false)
-                .filter(x -> x.getUserId().equals(userId))
-                .collect(Collectors.toList());
+        List<Message> messages = messageRepository.findAll();
         List<ConversationResponse> responses = new ArrayList<>();
-        for (Inbox inbox : userInboxes) {
-            List<String> users = StreamSupport
-                    .stream(inboxRepository.findAll().spliterator(), false)
-                    .filter(x -> x.getConversationId().equals(inbox.getConversationId()))
-                    .map(Inbox::getUserId)
-                    .collect(Collectors.toList());
-            conversationRepository
-                    .findById(inbox.getConversationId())
-                    .ifPresent(conversation -> {
-                        ConversationResponse response = new ConversationResponse();
-                        List<MessageResponse> messages = messageService.getMessagesInConversation(conversation.getId());
-                        Collections.sort(messages);
-                        MessageResponse message = new MessageResponse();
-                        if (!messages.isEmpty())
-                            message = messages.get(messages.size() - 1);
-                        if (users.size() <= 2) {
-                            response.setGroup(false);
-                            users.remove(userId);
-                            Optional<User> user = userRepository.findById(users.get(0));
-                            if (user.isPresent()) {
-                                response.setName(user.get().getFirstName() + " " + user.get().getLastName());
-                            }
-                        } else {
-                            response.setGroup(true);
-                            response.setName(conversation.getName());
-                            response.setUserIds(users);
-                        }
-                        response.setUserIds(users);
-                        response.setConversationId(conversation.getId());
-                        if (messages.isEmpty()) {
-                            response.setLastMessage("");
-                            response.setTimestamp(Long.parseLong("0"));
-                            response.setLastSender("");
-                        } else {
-                            response.setLastMessage(message.getMessageContent());
-                            response.setTimestamp(message.getTimestamp());
-                            if (message.getSenderId().equals(userId)) {
-                                response.setLastSender("You");
-                            } else {
-                                response.setLastSender(message.getSenderName());
-                            }
-                        }
-                        responses.add(response);
-                    });
+        List<Inbox> allInboxes = inboxRepository.findAll();
+        List<String> userConversationIds = allInboxes
+                .stream().filter(inbox -> inbox.getUserId().equals(userId))
+                .map(Inbox::getConversationId).collect(Collectors.toList());
+
+        List<Conversation> userConversations = userConversationIds.stream()
+                .map(id -> conversationRepository.findById(id).get()).collect(Collectors.toList());
+
+        for (Conversation conv : userConversations) {
+            ConversationResponse response = new ConversationResponse();
+            List<String> userIds = allInboxes.stream().filter(inbox -> inbox.getConversationId().equals(conv.getId()))
+                    .map(Inbox::getUserId).collect(Collectors.toList());
+            MessageResponse lastMessage = messageService.getLastMessageInConversation(conv.getId(), messages);
+
+            response.setLastMessage(lastMessage.getMessageContent());
+            response.setTimestamp(lastMessage.getTimestamp());
+            String lastSender = lastMessage.getSenderId().equals(userId) ? "You" : lastMessage.getSenderName();
+            response.setLastSender(lastSender);
+
+            if (userIds.size() <= 2) {
+                response.setGroup(false);
+                userIds.remove(userId);
+                Optional<User> user = userRepository.findById(userIds.get(0));
+                if (user.isPresent()) response.setName(user.get().getFirstName() + " " + user.get().getLastName());
+            } else {
+                response.setGroup(true);
+                response.setName(conv.getName());
+                response.setUserIds(userIds);
+            }
+            response.setUserIds(userIds);
+            response.setConversationId(conv.getId());
+            responses.add(response);
         }
+        Collections.sort(responses);
         return responses;
+
     }
 
     public String deleteInbox(String id) {

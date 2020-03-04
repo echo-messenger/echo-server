@@ -11,8 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 @Log4j2
 @Service
@@ -33,8 +31,7 @@ public class UserService {
     }
 
     public User getUserByEmail(String email) {
-        return StreamSupport
-                .stream(userRepository.findAll().spliterator(), false)
+        return userRepository.findAll().stream()
                 .filter(user -> email.equals(user.getEmail()))
                 .findAny()
                 .orElse(null);

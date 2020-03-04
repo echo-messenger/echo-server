@@ -17,8 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 @Log4j2
 @Service
@@ -48,18 +46,15 @@ public class ConversationService {
 
     public ConversationResponse getConversation(String id) {
         Optional<Conversation> res = conversationRepository.findById(id);
-        List<MessageResponse> messages = messageService.getMessagesInConversation(id);
-        Collections.sort(messages);
-        MessageResponse message = messages.get(messages.size() - 1);
+//        List<Message> messages = messageService.getMessages();
+//        MessageResponse lastMessage = messageService.getLastMessageInConversation(id, messages);
         if (res.isPresent()) {
             ConversationResponse response = new ConversationResponse();
             List<String> userIds = new ArrayList<>();
             List<String> userNames = new ArrayList<>();
             Conversation convo = res.get();
-            List<Inbox> inboxes = StreamSupport
-                    .stream(inboxRepository.findAll().spliterator(), false)
-                    .filter(x -> x.getConversationId().equals(convo.getId()))
-                    .collect(Collectors.toList());
+            List<Inbox> inboxes = inboxRepository.findAll();
+            inboxes.removeIf(x -> !x.getConversationId().equals(convo.getId()));
             for (Inbox inbox : inboxes) {
                 Optional<User> user = userRepository.findById(inbox.getUserId());
                 userIds.add(inbox.getUserId());
@@ -73,8 +68,8 @@ public class ConversationService {
             response.setName(convo.getName());
             response.setUserIds(userIds);
             response.setUserNames(userNames);
-            response.setLastMessage(message.getMessageContent());
-            response.setTimestamp(message.getTimestamp());
+//            response.setLastMessage(lastMessage.getMessageContent());
+//            response.setTimestamp(lastMessage.getTimestamp());
             return response;
         }
         return null;

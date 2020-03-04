@@ -15,8 +15,6 @@ import org.springframework.data.cassandra.core.mapping.Table;
 public class Inbox {
     @PrimaryKey
     private @NonNull String id;
-    // TODO   @Indexed
     private @NonNull String userId;
-    // TODO   @Indexed
     private @NonNull String conversationId;
 }

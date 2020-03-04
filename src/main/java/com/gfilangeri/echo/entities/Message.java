@@ -10,12 +10,16 @@ import org.springframework.data.cassandra.core.mapping.Table;
 @Getter
 @Setter
 @Table("messages")
-public class Message {
+public class Message implements Comparable<Message> {
     @PrimaryKey
     private @NonNull String id;
-    // TODO   @Indexed
     private @NonNull String conversationId;
     private @NonNull String senderId;
     private @NonNull String messageContent;
     private Long timestamp;
+
+    @Override
+    public int compareTo(Message other) {
+        return timestamp.compareTo(other.getTimestamp());
+    }
 }

@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
-public class ConversationResponse {
+public class ConversationResponse implements Comparable<ConversationResponse> {
     private String name;
     private List<String> userIds;
     private List<String> userNames;
@@ -20,4 +20,9 @@ public class ConversationResponse {
     private String lastMessage;
     private String lastSender;
     private Long timestamp;
+
+    @Override
+    public int compareTo(ConversationResponse other) {
+        return -timestamp.compareTo(other.getTimestamp());
+    }
 }
